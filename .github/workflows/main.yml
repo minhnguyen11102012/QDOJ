@@ -1,0 +1,53 @@
+name: Deploy QDOJ with ngrok
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy-qdoj:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python and Docker
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-pip curl git
+        pip3 install --upgrade pip
+        pip3 install docker-compose
+        curl -sSL https://get.docker.com | sh
+
+    - name: Clone QDOJ repository
+      run: |
+        git clone -b 2.0 https://github.com/QingdaoU/OnlineJudgeDeploy.git onlinejudge
+        cd onlinejudge
+
+    - name: Start QDOJ services with Docker Compose
+      working-directory: ./onlinejudge
+      run: |
+        docker-compose up -d
+        echo "Waiting for containers to start..."
+        sleep 60  # Wait for containers to fully initialize
+        docker ps -a
+
+    - name: Install ngrok
+      run: |
+        curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc > /dev/null
+        echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
+        sudo apt update && sudo apt install -y ngrok
+
+    - name: Configure and Start ngrok
+      run: |
+        ngrok config add-authtoken 2nyiyWrhpT6OwyUoaoZ2zdE9nNo_7KtHBQxaox3Wx2t9qBHTT
+        nohup ngrok http 80 > ngrok.log &
+        sleep 10  # Give ngrok some time to start
+
+    - name: Display ngrok Public URL
+      run: |
+        NGROK_URL=$(curl --silent http://127.0.0.1:4040/api/tunnels | jq -r ".tunnels[0].public_url")
+        echo "Your ngrok public URL is: $NGROK_URL"
