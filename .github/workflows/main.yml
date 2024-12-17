@@ -52,3 +52,8 @@ jobs:
       run: |
         NGROK_URL=$(curl --silent http://127.0.0.1:4040/api/tunnels | jq -r ".tunnels[0].public_url")
         echo "Your ngrok public URL is: $NGROK_URL"
+
+    - name: Keep the workflow alive
+      run: |
+        echo "Keeping the workflow alive..."
+        tail -f /dev/null  # Keep the job running forever
