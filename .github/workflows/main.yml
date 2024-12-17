@@ -14,13 +14,14 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up Python and Docker
+    - name: Install Docker and Docker Compose
       run: |
         sudo apt-get update
         sudo apt-get install -y python3-pip curl git
-        pip3 install --upgrade pip
-        pip3 install docker-compose
-        curl -sSL https://get.docker.com | sh
+        curl -fsSL https://get.docker.com | sh
+        sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+        docker-compose --version
 
     - name: Clone QDOJ repository
       run: |
@@ -30,10 +31,10 @@ jobs:
     - name: Start QDOJ services with Docker Compose
       working-directory: ./onlinejudge
       run: |
-        docker-compose up -d
+        sudo docker-compose up -d
         echo "Waiting for containers to start..."
         sleep 60  # Wait for containers to fully initialize
-        docker ps -a
+        sudo docker ps -a
 
     - name: Install ngrok
       run: |
